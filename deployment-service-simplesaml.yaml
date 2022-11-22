@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prueba-j
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prueba-j
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: prueba-j
+        role: demo
+    spec:
+      containers:
+        - name: prueba-j
+          image: carlarodriguezag/prueba-j:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: prueba-j
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prueba-j
+  labels:
+    app: prueba-j
+spec:
+  selector:
+   app: prueba-j
+  type: LoadBalancer
+  ports:
+   - name: http
+     port: 80
+     protocol: TCP
+     targetPort: 80
+  selector:
+    role: prueba-j
