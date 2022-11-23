@@ -1,10 +1,3 @@
-<!DOCTYPE html>
-<html>
-<body>
-
 <?php
-echo "CARLA RODRÍGUEZ AGUILAR";
+phpinfo();
 ?>
-
-</body>
-</html>
