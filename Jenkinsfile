@@ -49,7 +49,7 @@ pipeline {
            sh "scp -o StrictHostKeyChecking=no deployment-service-simplesaml.yaml digesetuser@148.213.5.79:/home/digesetuser"    
         script {
             try{
-                sh 'ssh digesetuser@148.213.5.79 microk8s.kubectl rollout restart deployment demo --kubeconfig=/home/digesetuser/.kube/config'
+                sh 'ssh digesetuser@148.213.5.79 microk8s.kubectl rollout restart deployment prueba-j --kubeconfig=/home/digesetuser/.kube/config'
               }catch(error){
          }
 	}
