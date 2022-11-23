@@ -16,7 +16,7 @@ spec:
     metadata:
       labels:
         app: prueba-j
-        role: demo
+        role: prueba-j
     spec:
       containers:
         - name: prueba-j
