@@ -3,7 +3,7 @@
 <body>
 
 <?php
-echo "Holaa ya funciona por favor";
+echo "CARLA RODRÍGUEZ AGUILAR";
 ?>
 
 </body>
