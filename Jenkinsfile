@@ -11,7 +11,7 @@ pipeline {
 
     stage('Checkout Source') {
       steps {
-	git credentialsId: 'demo_github', url: 'https://github.com/carlardgz/prueba-j.git'	
+	git credentialsId: 'demo_github', url: 'https://github.com/carlardgz/prueba-j.git', branch: 'main'	
       }
     }
 
