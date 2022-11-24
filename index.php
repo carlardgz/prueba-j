@@ -3,7 +3,7 @@
 <body>
 
 <?php
-echo "CARLA RODRÍGUEZ AGUILAR, la más ingeniera";
+echo "CARLA RODRÍGUEZ AGUILAR, Facultad de Telemática";
 ?>
 
 </body>
