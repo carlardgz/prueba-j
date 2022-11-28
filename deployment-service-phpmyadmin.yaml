@@ -25,6 +25,7 @@ spec:
           ports:
             - containerPort: 80
               name: phpma-j
+              key: hola
 
 ---
 apiVersion: v1

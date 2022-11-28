@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: phpma-j
+  name: mysql-j
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: phpma-j
+      app: mysql-j
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -15,27 +15,27 @@ spec:
   template:
     metadata:
       labels:
-        app: phpma-j
+        app: mysql-j
         role: phpma-j
     spec:
       containers:
-        - name: phpma-j
-          image: phpmyadmin:latest
+        - name: mysql-j
+          image: mysql:8.0
           imagePullPolicy: Always
           ports:
             - containerPort: 80
-              name: phpma-j
+              name: mysql-j
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: phpma-j
+  name: mysql-j
   labels:
-    app: phpma-j
+    app: mysql-j
 spec:
   selector:
-   app: phpma-j
+   app: mysql-j
   type: LoadBalancer
   ports:
    - name: http
@@ -43,4 +43,4 @@ spec:
      protocol: TCP
      targetPort: 80
   selector:
-    role: phpma-j
+    role: mysql-j
