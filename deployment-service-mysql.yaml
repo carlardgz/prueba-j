@@ -16,7 +16,7 @@ spec:
     metadata:
       labels:
         app: mysql-j
-        role: phpma-j
+        role: mysql-j
     spec:
       containers:
         - name: mysql-j
