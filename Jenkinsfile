@@ -40,7 +40,6 @@ pipeline {
       steps {
 	script {
            kubernetesDeploy(configs: "deployment-service-simplesaml.yaml", kubeconfigId: "kuberhaep")
-	   kubernetesDeploy(configs: "deployment-service-phpmyadmin.yaml", kubeconfigId: "kuberhaep")
           }
          }
         }
