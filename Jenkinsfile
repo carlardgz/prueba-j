@@ -1,8 +1,7 @@
 pipeline {
 
   environment {
-    dockerimagename = "carlarodriguezag/prueba-j"
-    dockerImage = ''
+        dockerImage = ''
   }
 
   agent any
@@ -18,7 +17,7 @@ pipeline {
     stage('Build image') {
       steps {
         script {
-          dockerImage = docker.build dockerimagename
+         app = docker.build(carlarodriguezag/prueba-j)
         }
       }
     }

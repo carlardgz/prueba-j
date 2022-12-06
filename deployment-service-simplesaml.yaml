@@ -37,6 +37,7 @@ spec:
   selector:
    app: prueba-j
   type: LoadBalancer
+  loadBalancerIP: 148.213.1.146
   ports:
    - name: http
      port: 80
