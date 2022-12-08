@@ -45,7 +45,7 @@ pipeline {
         }
    stage('Restarting POD') {
       steps {
-          sshagent(['kubernetessh']) {
+          sshagent(['rodriguezssh']) {
            sh "scp -o StrictHostKeyChecking=no deployment-service-simplesaml.yaml digesetuser@148.213.1.131:/home/digesetuser"    
         script {
             try{
