@@ -1,7 +1,8 @@
 pipeline {
 
   environment {
-	dockerimagename = "carlarodriguezag/prueba-j2"
+	dockerimagename = "carlarodriguezag/prueba-j"
+	dockercredential = "demo_dockerhub"
         dockerImage = ''
   }
 
@@ -25,7 +26,7 @@ pipeline {
 
     stage('Pushing Image') {
       environment {
-               registryCredential = 'demo_dockerhub'
+               registryCredential = 'dockercredential'
            }
       steps{
         script {
