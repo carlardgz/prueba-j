@@ -1,7 +1,7 @@
 pipeline {
 
   environment {
-	dockerimagename = "carlarodriguezag/prueba-j"
+	dockerimagename = "carlarodriguezag/prueba-j2"
         dockerImage = ''
   }
 
@@ -18,7 +18,7 @@ pipeline {
     stage('Build image') {
       steps {
         script {
-       	 docker.build dockerimagename
+	 docker.build dockerimagename
         }
       }
     }
