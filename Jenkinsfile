@@ -1,6 +1,7 @@
 pipeline {
 
   environment {
+	dockerimagename = "carlarodriguezag/prueba-j"
         dockerImage = ''
   }
 
@@ -17,7 +18,7 @@ pipeline {
     stage('Build image') {
       steps {
         script {
-         app = docker.build("carlarodriguezag/prueba-j")
+         app = docker.build dockerimagename
         }
       }
     }
@@ -38,18 +39,18 @@ pipeline {
     stage('Deploying App to Kubernetes') {
       steps {
 	script {
-           kubernetesDeploy(configs: "deployment-service-simplesaml.yaml", kubeconfigId: "kuberhaep")
+           kubernetesDeploy(configs: "deployment-service-simplesaml.yaml", kubeconfigId: "kuberkey")
           }
          }
         }
    stage('Restarting POD') {
       steps {
           sshagent(['kubernetessh']) {
-           sh "scp -o StrictHostKeyChecking=no deployment-service-simplesaml.yaml digesetuser@148.213.5.79:/home/digesetuser"    
+           sh "scp -o StrictHostKeyChecking=no deployment-service-simplesaml.yaml digesetuser@148.213.1.131:/home/digesetuser"    
         script {
             try{
-                sh 'ssh digesetuser@148.213.5.79 microk8s.kubectl rollout restart deployment prueba-j --kubeconfig=/home/digesetuser/.kube/config'
-		sh 'ssh digesetuser@148.213.5.79 microk8s.kubectl rollout status deployment prueba-j --kubeconfig=/home/digesetuser/.kube/config'
+                sh 'ssh digesetuser@148.213.1.131 microk8s.kubectl rollout restart deployment prueba-j --kubeconfig=/root/.kube/config'
+		sh 'ssh digesetuser@148.213.1.131 microk8s.kubectl rollout status deployment prueba-j --kubeconfig=/root/.kube/config'
               }catch(error){
          }
 	}
