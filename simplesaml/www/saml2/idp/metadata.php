@@ -2,139 +2,251 @@
 
 require_once('../../_include.php');
 
-/* Load simpleSAMLphp, configuration and metadata */
-$config = SimpleSAML_Configuration::getInstance();
-$metadata = SimpleSAML_Metadata_MetaDataStorageHandler::getMetadataHandler();
+use Symfony\Component\VarExporter\VarExporter;
 
-if (!$config->getBoolean('enable.saml20-idp', false))
-	throw new SimpleSAML_Error_Error('NOACCESS');
+use SAML2\Constants;
+use SimpleSAML\Configuration;
+use SimpleSAML\Error;
+use SimpleSAML\Module;
+use SimpleSAML\Utils\Auth as Auth;
+use SimpleSAML\Utils\Crypto as Crypto;
+use SimpleSAML\Utils\HTTP as HTTP;
+use SimpleSAML\Utils\Config\Metadata as Metadata;
 
-/* Check if valid local session exists.. */
-if ($config->getBoolean('admin.protectmetadata', false)) {
-	SimpleSAML_Utilities::requireAdmin();
+$config = Configuration::getInstance();
+if (!$config->getBoolean('enable.saml20-idp', false) || !Module::isModuleEnabled('saml')) {
+    throw new Error\Error('NOACCESS', null, 403);
 }
 
+// check if valid local session exists
+if ($config->getBoolean('admin.protectmetadata', false)) {
+    Auth::requireAdmin();
+}
+
+$metadata = \SimpleSAML\Metadata\MetaDataStorageHandler::getMetadataHandler();
 
 try {
-	$idpentityid = isset($_GET['idpentityid']) ? $_GET['idpentityid'] : $metadata->getMetaDataCurrentEntityID('saml20-idp-hosted');
-	$idpmeta = $metadata->getMetaDataConfig($idpentityid, 'saml20-idp-hosted');
+    $idpentityid = isset($_GET['idpentityid']) ?
+        $_GET['idpentityid'] : $metadata->getMetaDataCurrentEntityID('saml20-idp-hosted');
+    $idpmeta = $metadata->getMetaDataConfig($idpentityid, 'saml20-idp-hosted');
 
-	$keys = array();
-	$certInfo = SimpleSAML_Utilities::loadPublicKey($idpmeta, FALSE, 'new_');
-	if ($certInfo !== NULL) {
-		$keys[] = array(
-			'type' => 'X509Certificate',
-			'signing' => TRUE,
-			'encryption' => TRUE,
-			'X509Certificate' => $certInfo['certData'],
-		);
-		$hasNewCert = TRUE;
-	} else {
-		$hasNewCert = FALSE;
-	}
+    $availableCerts = [];
 
-	$certInfo = SimpleSAML_Utilities::loadPublicKey($idpmeta, TRUE);
-	$keys[] = array(
-		'type' => 'X509Certificate',
-		'signing' => TRUE,
-		'encryption' => ($hasNewCert ? FALSE : TRUE),
-		'X509Certificate' => $certInfo['certData'],
-	);
+    $keys = [];
+    $certInfo = Crypto::loadPublicKey($idpmeta, false, 'new_');
+    if ($certInfo !== null) {
+        $availableCerts['new_idp.crt'] = $certInfo;
+        $keys[] = [
+            'type'            => 'X509Certificate',
+            'signing'         => true,
+            'encryption'      => true,
+            'X509Certificate' => $certInfo['certData'],
+        ];
+        $hasNewCert = true;
+    } else {
+        $hasNewCert = false;
+    }
 
-	if ($idpmeta->hasValue('https.certificate')) {
-		$httpsCert = SimpleSAML_Utilities::loadPublicKey($idpmeta, TRUE, 'https.');
-		assert('isset($httpsCert["certData"])');
-		$keys[] = array(
-			'type' => 'X509Certificate',
-			'signing' => TRUE,
-			'encryption' => FALSE,
-			'X509Certificate' => $httpsCert['certData'],
-		);
-	}
+    $certInfo = Crypto::loadPublicKey($idpmeta, true);
+    $availableCerts['idp.crt'] = $certInfo;
+    $keys[] = [
+        'type'            => 'X509Certificate',
+        'signing'         => true,
+        'encryption'      => ($hasNewCert ? false : true),
+        'X509Certificate' => $certInfo['certData'],
+    ];
 
-	$metaArray = array(
-		'metadata-set' => 'saml20-idp-remote',
-		'entityid' => $idpentityid,
-		'SingleSignOnService' => $metadata->getGenerated('SingleSignOnService', 'saml20-idp-hosted'),
-		'SingleLogoutService' => $metadata->getGenerated('SingleLogoutService', 'saml20-idp-hosted'),
-	);
+    if ($idpmeta->hasValue('https.certificate')) {
+        $httpsCert = Crypto::loadPublicKey($idpmeta, true, 'https.');
+        assert(isset($httpsCert['certData']));
+        $availableCerts['https.crt'] = $httpsCert;
+        $keys[] = [
+            'type'            => 'X509Certificate',
+            'signing'         => true,
+            'encryption'      => false,
+            'X509Certificate' => $httpsCert['certData'],
+        ];
+    }
 
-	if (count($keys) === 1) {
-		$metaArray['certData'] = $keys[0]['X509Certificate'];
-	} else {
-		$metaArray['keys'] = $keys;
-	}
+    $metaArray = [
+        'metadata-set' => 'saml20-idp-remote',
+        'entityid'     => $idpentityid,
+    ];
 
-	if ($idpmeta->getBoolean('saml20.sendartifact', FALSE)) {
-		/* Artifact sending enabled. */
-		$metaArray['ArtifactResolutionService'][] = array(
-			'index' => 0,
-			'Location' => SimpleSAML_Utilities::getBaseURL() . 'saml2/idp/ArtifactResolutionService.php',
-			'Binding' => SAML2_Const::BINDING_SOAP,
-		);
-	}
+    $ssob = $metadata->getGenerated('SingleSignOnServiceBinding', 'saml20-idp-hosted');
+    $slob = $metadata->getGenerated('SingleLogoutServiceBinding', 'saml20-idp-hosted');
+    $ssol = $metadata->getGenerated('SingleSignOnService', 'saml20-idp-hosted');
+    $slol = $metadata->getGenerated('SingleLogoutService', 'saml20-idp-hosted');
 
-	$metaArray['NameIDFormat'] = $idpmeta->getString('NameIDFormat', 'urn:oasis:names:tc:SAML:2.0:nameid-format:transient');
+    if (is_array($ssob)) {
+        foreach ($ssob as $binding) {
+            $metaArray['SingleSignOnService'][] = [
+                'Binding'  => $binding,
+                'Location' => $ssol,
+            ];
+        }
+    } else {
+        $metaArray['SingleSignOnService'][] = [
+            'Binding'  => $ssob,
+            'Location' => $ssol,
+        ];
+    }
 
-	if ($idpmeta->hasValue('OrganizationName')) {
-		$metaArray['OrganizationName'] = $idpmeta->getLocalizedString('OrganizationName');
-		$metaArray['OrganizationDisplayName'] = $idpmeta->getLocalizedString('OrganizationDisplayName', $metaArray['OrganizationName']);
+    if (is_array($slob)) {
+        foreach ($slob as $binding) {
+            $metaArray['SingleLogoutService'][] = [
+                'Binding'  => $binding,
+                'Location' => $slol,
+            ];
+        }
+    } else {
+        $metaArray['SingleLogoutService'][] = [
+            'Binding'  => $slob,
+            'Location' => $slol,
+        ];
+    }
 
-		if (!$idpmeta->hasValue('OrganizationURL')) {
-			throw new SimpleSAML_Error_Exception('If OrganizationName is set, OrganizationURL must also be set.');
-		}
-		$metaArray['OrganizationURL'] = $idpmeta->getLocalizedString('OrganizationURL');
-	}
+    if (count($keys) === 1) {
+        $metaArray['certData'] = $keys[0]['X509Certificate'];
+    } else {
+        $metaArray['keys'] = $keys;
+    }
 
-	if ($idpmeta->hasValue('scope')) {
-		$metaArray['scope'] = $idpmeta->getArray('scope');
-	}
+    if ($idpmeta->getBoolean('saml20.sendartifact', false)) {
+        // Artifact sending enabled
+        $metaArray['ArtifactResolutionService'][] = [
+            'index'    => 0,
+            'Location' => HTTP::getBaseURL() . 'saml2/idp/ArtifactResolutionService.php',
+            'Binding'  => Constants::BINDING_SOAP,
+        ];
+    }
 
-	$metaflat = '$metadata[' . var_export($idpentityid, TRUE) . '] = ' . var_export($metaArray, TRUE) . ';';
+    if ($idpmeta->getBoolean('saml20.hok.assertion', false)) {
+        // Prepend HoK SSO Service endpoint.
+        array_unshift($metaArray['SingleSignOnService'], [
+            'hoksso:ProtocolBinding' => Constants::BINDING_HTTP_REDIRECT,
+            'Binding'                => Constants::BINDING_HOK_SSO,
+            'Location'               => HTTP::getBaseURL() . 'saml2/idp/SSOService.php'
+        ]);
+    }
 
-	$metaBuilder = new SimpleSAML_Metadata_SAMLBuilder($idpentityid);
-	$metaBuilder->addMetadataIdP20($metaArray);
-	$metaBuilder->addOrganizationInfo($metaArray);
-	$technicalContactEmail = $config->getString('technicalcontact_email', NULL);
-	if ($technicalContactEmail && $technicalContactEmail !== 'na@example.org') {
-		$metaBuilder->addContact('technical', array(
-			'emailAddress' => $technicalContactEmail,
-			'name' => $config->getString('technicalcontact_name', NULL),
-		));
-	}
-	$metaxml = $metaBuilder->getEntityDescriptorText();
+    if ($idpmeta->getBoolean('saml20.ecp', false)) {
+        $metaArray['SingleSignOnService'][] = [
+            'index' => 0,
+            'Binding'  => Constants::BINDING_SOAP,
+            'Location' => HTTP::getBaseURL() . 'saml2/idp/SSOService.php',
+        ];
+    }
 
-	/* Sign the metadata if enabled. */
-	$metaxml = SimpleSAML_Metadata_Signer::sign($metaxml, $idpmeta->toArray(), 'SAML 2 IdP');
+    $metaArray['NameIDFormat'] = $idpmeta->getArrayizeString(
+        'NameIDFormat',
+        'urn:oasis:names:tc:SAML:2.0:nameid-format:transient'
+    );
 
-	if (array_key_exists('output', $_GET) && $_GET['output'] == 'xhtml') {
-		$defaultidp = $config->getString('default-saml20-idp', NULL);
+    if ($idpmeta->hasValue('OrganizationName')) {
+        $metaArray['OrganizationName'] = $idpmeta->getLocalizedString('OrganizationName');
+        $metaArray['OrganizationDisplayName'] = $idpmeta->getLocalizedString(
+            'OrganizationDisplayName',
+            $metaArray['OrganizationName']
+        );
 
-		$t = new SimpleSAML_XHTML_Template($config, 'metadata.php', 'admin');
+        if (!$idpmeta->hasValue('OrganizationURL')) {
+            throw new Error\Exception(
+                'If OrganizationName is set, OrganizationURL must also be set.'
+            );
+        }
+        $metaArray['OrganizationURL'] = $idpmeta->getLocalizedString('OrganizationURL');
+    }
 
+    if ($idpmeta->hasValue('scope')) {
+        $metaArray['scope'] = $idpmeta->getArray('scope');
+    }
 
-		$t->data['header'] = 'saml20-idp';
-		$t->data['metaurl'] = SimpleSAML_Utilities::selfURLNoQuery();
-		$t->data['metadata'] = htmlspecialchars($metaxml);
-		$t->data['metadataflat'] = htmlspecialchars($metaflat);
-		$t->data['defaultidp'] = $defaultidp;
-		$t->show();
+    if ($idpmeta->hasValue('EntityAttributes')) {
+        $metaArray['EntityAttributes'] = $idpmeta->getArray('EntityAttributes');
 
-	} else {
+        // check for entity categories
+        if (Metadata::isHiddenFromDiscovery($metaArray)) {
+            $metaArray['hide.from.discovery'] = true;
+        }
+    }
 
-		header('Content-Type: application/xml');
+    if ($idpmeta->hasValue('UIInfo')) {
+        $metaArray['UIInfo'] = $idpmeta->getArray('UIInfo');
+    }
 
-		echo $metaxml;
-		exit(0);
+    if ($idpmeta->hasValue('DiscoHints')) {
+        $metaArray['DiscoHints'] = $idpmeta->getArray('DiscoHints');
+    }
 
-	}
+    if ($idpmeta->hasValue('RegistrationInfo')) {
+        $metaArray['RegistrationInfo'] = $idpmeta->getArray('RegistrationInfo');
+    }
 
+    if ($idpmeta->hasValue('validate.authnrequest')) {
+        $metaArray['sign.authnrequest'] = $idpmeta->getBoolean('validate.authnrequest');
+    }
 
+    if ($idpmeta->hasValue('redirect.validate')) {
+        $metaArray['redirect.sign'] = $idpmeta->getBoolean('redirect.validate');
+    }
 
-} catch(Exception $exception) {
+    if ($idpmeta->hasValue('contacts')) {
+        $contacts = $idpmeta->getArray('contacts');
+        foreach ($contacts as $contact) {
+            $metaArray['contacts'][] = Metadata::getContact($contact);
+        }
+    }
 
-	throw new SimpleSAML_Error_Error('METADATA', $exception);
+    $technicalContactEmail = $config->getString('technicalcontact_email', false);
+    if ($technicalContactEmail && $technicalContactEmail !== 'na@example.org') {
+        $techcontact = [
+            'emailAddress' => $technicalContactEmail,
+            'name' => $config->getString('technicalcontact_name', null),
+            'contactType' => 'technical',
+        ];
+        $metaArray['contacts'][] = Metadata::getContact($techcontact);
+    }
 
+    $metaBuilder = new \SimpleSAML\Metadata\SAMLBuilder($idpentityid);
+    $metaBuilder->addMetadataIdP20($metaArray);
+    $metaBuilder->addOrganizationInfo($metaArray);
+
+    $metaxml = $metaBuilder->getEntityDescriptorText();
+
+    $metaflat = '$metadata[' . var_export($idpentityid, true) . '] = ' . VarExporter::export($metaArray) . ';';
+
+    // sign the metadata if enabled
+    $metaxml = \SimpleSAML\Metadata\Signer::sign($metaxml, $idpmeta->toArray(), 'SAML 2 IdP');
+
+    if (array_key_exists('output', $_GET) && $_GET['output'] == 'xhtml') {
+        $t = new \SimpleSAML\XHTML\Template($config, 'metadata.tpl.php', 'admin');
+
+        $t->data['clipboard.js'] = true;
+        $t->data['available_certs'] = $availableCerts;
+        $certdata = [];
+        foreach (array_keys($availableCerts) as $availableCert) {
+            $certdata[$availableCert]['name'] = $availableCert;
+            $certdata[$availableCert]['url'] = Module::getModuleURL('saml/idp/certs.php') . '/' . $availableCert;
+            $certdata[$availableCert]['comment'] = (
+                $availableCerts[$availableCert]['certFingerprint'][0] === 'afe71c28ef740bc87425be13a2263d37971da1f9' ?
+                'This is the default certificate. Generate a new certificate if this is a production system.' :
+                ''
+            );
+        }
+        $t->data['certdata'] = $certdata;
+        $t->data['header'] = 'saml20-idp'; // TODO: Replace with headerString in 2.0
+        $t->data['headerString'] = \SimpleSAML\Locale\Translate::noop('metadata_saml20-idp');
+        $t->data['metaurl'] = HTTP::getSelfURLNoQuery();
+        $t->data['metadata'] = htmlspecialchars($metaxml);
+        $t->data['metadataflat'] = htmlspecialchars($metaflat);
+        $t->show();
+    } else {
+        header('Content-Type: application/samlmetadata+xml');
+
+        echo $metaxml;
+        exit(0);
+    }
+} catch (\Exception $exception) {
+    throw new Error\Error('METADATA', $exception);
 }
-
-?>

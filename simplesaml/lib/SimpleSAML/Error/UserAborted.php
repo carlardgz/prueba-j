@@ -1,20 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
+namespace SimpleSAML\Error;
+
+use Throwable;
+
 /**
  * Exception indicating user aborting the authentication process.
  *
- * @package simpleSAMLphp
- * @version $Id$
+ * @package SimpleSAMLphp
  */
-class SimpleSAML_Error_UserAborted extends SimpleSAML_Error_Error {
 
-	/**
-	 * Create the error
-	 *
-	 * @param Exception|NULL $cause  The exception that caused this error.
-	 */
-	public function __construct(Exception $cause = NULL) {
-		parent::__construct('USERABORTED', $cause);
-	}
-
+class UserAborted extends Error
+{
+    /**
+     * Create the error
+     *
+     * @param \Throwable|null $cause  The exception that caused this error.
+     */
+    public function __construct(Throwable $cause = null)
+    {
+        parent::__construct('USERABORTED', $cause);
+    }
 }

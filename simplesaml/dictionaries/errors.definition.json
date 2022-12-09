@@ -1,6 +1,6 @@
 {
 	"error_header": {
-		"en": "simpleSAMLphp error"
+		"en": "SimpleSAMLphp error"
 	},
 	"report_trackid": {
 		"en": "If you report this error, please also report this tracking number which makes it possible to locate your session in the logs available to the system administrator:"
@@ -21,7 +21,7 @@
 		"en": "E-mail address:"
 	},
 	"report_explain": {
-		"en": "Explain what you did when this error occured..."
+		"en": "Explain what you did when this error occurred..."
 	},
 	"report_submit": {
 		"en": "Send error report"
@@ -30,13 +30,13 @@
 		"en": "How to get help"
 	},
 	"howto_text": {
-		"en": "This error probably is due to some unexpected behaviour or to misconfiguration of simpleSAMLphp. Contact the administrator of this login service, and send them the error message above."
+		"en": "This error probably is due to some unexpected behaviour or to misconfiguration of SimpleSAMLphp. Contact the administrator of this login service, and send them the error message above."
 	},
 	"title_CREATEREQUEST": {
 		"en": "Error creating request"
 	},
 	"descr_CREATEREQUEST": {
-		"en": "An error occured when trying to create the SAML request."
+		"en": "An error occurred when trying to create the SAML request."
 	},
 	"title_DISCOPARAMS": {
 		"en": "Bad request to discovery service"
@@ -48,31 +48,31 @@
 		"en": "Could not create authentication response"
 	},
 	"descr_GENERATEAUTHNRESPONSE": {
-		"en": "When this identity provider tried to create an authentication response, an error occured."
+		"en": "When this identity provider tried to create an authentication response, an error occurred."
 	},
 	"title_LDAPERROR": {
 		"en": "LDAP Error"
 	},
 	"descr_LDAPERROR": {
-		"en": "LDAP is the user database, and when you try to login, we need to contact an LDAP database. An error occured when we tried it this time."
+		"en": "LDAP is the user database, and when you try to login, we need to contact an LDAP database. An error occurred when we tried it this time."
 	},
 	"title_LOGOUTREQUEST": {
 		"en": "Error processing the Logout Request"
 	},
 	"descr_LOGOUTREQUEST": {
-		"en": "An error occured when trying to process the Logout Request."
+		"en": "An error occurred when trying to process the Logout Request."
 	},
 	"title_METADATA": {
 		"en": "Error loading metadata"
 	},
 	"descr_METADATA": {
-		"en": "There is some misconfiguration of your simpleSAMLphp installation. If you are the administrator of this service, you should make sure your metadata configuration is correctly setup."
+		"en": "There is some misconfiguration of your SimpleSAMLphp installation. If you are the administrator of this service, you should make sure your metadata configuration is correctly setup."
 	},
 	"title_NOACCESS": {
 		"en": "No access"
 	},
 	"descr_NOACCESS": {
-		"en": "This endpoint is not enabled. Check the enable options in your configuration of simpleSAMLphp."
+		"en": "This endpoint is not enabled. Check the enable options in your configuration of SimpleSAMLphp."
 	},
 	"title_NORELAYSTATE": {
 		"en": "No RelayState"
@@ -90,20 +90,32 @@
 		"en": "Error processing request from Service Provider"
 	},
 	"descr_PROCESSAUTHNREQUEST": {
-		"en": "This Identity Provider received an Authentication Request from a Service Provider, but an error occured when trying to process the request."
+		"en": "This Identity Provider received an Authentication Request from a Service Provider, but an error occurred when trying to process the request."
 	},
 	"title_SLOSERVICEPARAMS": {
 		"en": "No SAML message provided"
 	},
 	"descr_SLOSERVICEPARAMS": {
-		"en": "You accessed the SingleLogoutService interface, but did not provide a SAML LogoutRequest or LogoutResponse."
+		"en": "You accessed the SingleLogoutService interface, but did not provide a SAML LogoutRequest or LogoutResponse. Please note that this endpoint is not intended to be accessed directly."
 	},
 	"title_ACSPARAMS": {
 		"en": "No SAML response provided"
 	},
 	"descr_ACSPARAMS": {
-		"en": "You accessed the Assertion Consumer Service interface, but did not provide a SAML Authentication Response."
+		"en": "You accessed the Assertion Consumer Service interface, but did not provide a SAML Authentication Response. Please note that this endpoint is not intended to be accessed directly."
 	},
+    "title_SSOPARAMS": {
+        "en": "No SAML request provided"
+    },
+    "descr_SSOPARAMS": {
+        "en": "You accessed the Single Sign On Service interface, but did not provide a SAML Authentication Request. Please note that this endpoint is not intended to be accessed directly."
+    },
+    "title_ARSPARAMS": {
+        "en": "No SAML message provided"
+    },
+    "descr_ARSPARAMS": {
+        "en": "You accessed the Artifact Resolution Service interface, but did not provide a SAML ArtifactResolve message. Please note that this endpoint is not intended to be accessed directly."
+    },
 	"title_CASERROR": {
 		"en": "CAS Error"
 	},
@@ -114,7 +126,7 @@
 		"en": "Configuration error"
 	},
 	"descr_CONFIG": {
-		"en": "simpleSAMLphp appears to be misconfigured."
+		"en": "SimpleSAMLphp appears to be misconfigured."
 	},
 	"title_NOTVALIDCERT": {
 		"en": "Invalid certificate"
@@ -167,14 +179,6 @@
 	"title_WRONGUSERPASS": {
 		"en": "Incorrect username or password"
 	},
-	"title_WRONGDOMAIN": {
-		"en": "Incorrect domain (@ucol.mx)",
-		"es": "Dominio incorrecto (debe incluir @ucol.mx)"
-	},
-	"descr_WRONGDOMAIN": {
-		"en": "Use your full email, (user@ucol.mx) ",
-		"es": "Para iniciar en este IDP debe disponer de cuenta de correo de la Universidad de Colima e ingresarlo de manera completa, ej usuario@ucol.mx"
-	},		
 	"descr_WRONGUSERPASS": {
 		"en": "Either no user with the given username could be found, or the password you gave was wrong. Please check the username and try again."
 	},
@@ -219,5 +223,17 @@
 	},
 	"descr_METADATANOTFOUND": {
 		"en": "Unable to locate metadata for %ENTITYID%"
+	},
+	"title_AUTHSOURCEERROR": {
+		"en": "Authentication source error"
+	},
+	"descr_AUTHSOURCEERROR": {
+		"en": "Authentication error in source %AUTHSOURCE%. The reason was: %REASON%"
+	},
+	"title_MEMCACHEDOWN": {
+		"en": "Cannot retrieve session data"
+	},
+	"descr_MEMCACHEDOWN": {
+		"en": "Your session data cannot be retrieved right now due to technical difficulties. Please try again in a few minutes."
 	}
 }
