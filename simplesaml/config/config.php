@@ -11,7 +11,7 @@ $config = array (
 	 * Setup the following parameters to match the directory of your installation.
 	 * See the user manual for more details.
 	 */
-	'baseurlpath'           => 'simplecarla/',
+	'baseurlpath'           => 'simplesaml/',
 	'certdir'               => 'CERT/',
 	'loggingdir'            => 'log/',
 	'datadir'               => 'data/',
